@@ -391,18 +391,18 @@
         const API_BASE_URL = 'http://apis.data.go.kr/1490000/empinsrnceco/getEmpinsrncecoDtlInqSvc';
         
         // 부서 내부용 API 키 (자동 설정)
-        const INTERNAL_API_KEY = '+yJasHD7Z6SzpXbUSVX+xv/F8NoZckOVWzHS8Y3LDC1j7WF4cIacYEQLF2bUWaTH6vz9iuBDKHYOtv9R5di4kw=='; // 여기에 실제 API 키를 넣어주세요
+        const INTERNAL_API_KEY = '+yJasHD7Z6SzpXbUSVX+xv/F8NoZckOVWzHS8Y3LDC1j7WF4cIacYEQLF2bUWaTH6vz9iuBDKHYOtv9R5di4kw=='; // 실제 API 키
         
         // 페이지 로드시 API 키 자동 설정
         window.onload = function() {
             document.getElementById('apiKey').value = INTERNAL_API_KEY;
         };
         
-        // CORS 프록시 서비스들
+        // CORS 프록시 서비스들 (안정성을 위해 여러 개 준비)
         const PROXY_URLS = [
+            'https://cors-anywhere.herokuapp.com/',
             'https://api.allorigins.win/get?url=',
-            'https://corsproxy.io/?',
-            'https://cors-anywhere.herokuapp.com/'
+            'https://corsproxy.io/?'
         ];
         
         function handleFileSelect(event) {
@@ -462,7 +462,7 @@
             
             const apiKey = document.getElementById('apiKey').value;
             const params = new URLSearchParams({
-                serviceKey: apiKey,
+                serviceKey: encodeURIComponent(apiKey), // URL 인코딩 추가
                 wkplcInsrncDivCd: '1',
                 bzowrRgstNo: businessNumber
             });
@@ -693,5 +693,4 @@
         }
     </script>
 </body>
-
 </html>
