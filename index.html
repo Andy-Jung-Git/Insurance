@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>산재보험 가입내역 조회 시스템</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .form-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #e1e5ff;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .file-input-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .progress-section {
+            background: #f0f4ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #d1e7ff;
+        }
+        
+        .progress-bar-container {
+            background: #e0e7ff;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .status-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .status-info div {
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .results-section {
+            background: #f8fffe;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #d1f5f3;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
+        
+        tr:hover {
+            background-color: #e8f2ff;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+        
+        .result-success {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .result-error {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            padding: 8px;
+            background: #e8f2ff;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMTIiIHN0cm9rZT0iIzFENEVEOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CjxwYXRoIGQ9Ik0xNiAyNkMxNiAyMi42ODYzIDE4LjY4NjMgMjAgMjIgMjBIMjZWMjRIMjJDMjAuODk1NCAyNCAyMCAyNC44OTU0IDIwIDI2VjMyQzIwIDM0LjIwOTEgMjEuNzkwOSAzNiAyNCAzNkgyOFY0MEgyNEMxOS41ODE3IDQwIDE2IDM2LjQxODMgMTYgMzJWMjZaIiBmaWxsPSIjMUQ0RUQ4Ii8+CjxwYXRoIGQ9Ik0zNiAyNEgzMkMzMC44OTU0IDI0IDMwIDI0Ljg5NTQgMzAgMjZWMzJDMzAgMzQuMjA5MSAzMS43OTA5IDM2IDM0IDM2SDM4VjQwSDM0QzI5LjU4MTcgNDAgMjYgMzYuNDE4MyAyNiAzMlYyNkMyNiAyMi42ODYzIDI4LjY4NjMgMjAgMzIgMjBIMzZWMjRaIiBmaWxsPSIjMUQ0RUQ4Ii8+CjxwYXRoIGQ9Ik00MCAyNEg0NFY0MEg0MFYyNFoiIGZpbGw9IiMxRDRFRDgiLz4KPHBhdGggZD0iTTQ4IDI0SDE2VjI4SDQ4VjI0WiIgZmlsbD0iIzFENEVEOCIvPgo8cGF0aCBkPSJNNDggMzJIMTZWMzZINDhWMzJaIiBmaWxsPSIjMUQ0RUQ4Ii8+CjxyZWN0IHg9IjQ0IiB5PSIxNiIgd2lkdGg9IjEyIiBoZWlnaHQ9IjEyIiByeD0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMUQ0RUQ4IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTQ2IDIxTDQ5IDI0TDU0IDE5IiBzdHJva2U9IiMxRDRFRDgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=" alt="산재보험" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 15px;"> 산재보험 가입내역 조회 시스템</h1>
+        
+        <div class="form-section">
+            <div class="form-group">
+                <label for="apiKey">API 키 *</label>
+                <input type="password" id="apiKey" placeholder="공공데이터포털에서 발급받은 API 키를 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="excelFile">엑셀 파일 업로드 *</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+                    <div class="file-input-button">📁 엑셀 파일 선택</div>
+                </div>
+                <div id="fileName" class="file-name" style="display: none;"></div>
+                <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; color: #856404; font-size: 13px;">
+                    ⚠️ 엑셀 파일에 '사업자등록번호' 컬럼명이 반드시 포함되어야 합니다.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="requestDelay">요청 간격 (초)</label>
+                <input type="number" id="requestDelay" min="0.5" max="10" step="0.1" value="1" placeholder="1" style="width: 150px;">
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startProcessing()">🚀 조회 시작</button>
+            <button class="btn btn-secondary" onclick="stopProcessing()" disabled>⏹️ 중지</button>
+            <button class="btn btn-primary" onclick="downloadResults()" disabled>💾 결과 다운로드</button>
+        </div>
+        
+        <div class="progress-section" style="display: none;">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-info">
+                <div id="currentStatus">대기 중...</div>
+                <div id="progressCount">0/0</div>
+            </div>
+        </div>
+        
+        <div class="results-section" style="display: none;">
+            <h3>📊 처리 결과</h3>
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>순번</th>
+                            <th>사업자등록번호</th>
+                            <th>상호명</th>
+                            <th>결과</th>
+                            <th>보험가입구분</th>
+                            <th>적용일자</th>
+                            <th>상실일자</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let excelData = [];
+        let results = [];
+        let isProcessing = false;
+        let shouldStop = false;
+        const API_BASE_URL = 'http://apis.data.go.kr/1490000/empinsrnceco/getEmpinsrncecoDtlInqSvc';
+        
+        // 부서 내부용 API 키 (자동 설정)
+        const INTERNAL_API_KEY = 'YOUR_API_KEY_HERE'; // 여기에 실제 API 키를 넣어주세요
+        
+        // 페이지 로드시 API 키 자동 설정
+        window.onload = function() {
+            document.getElementById('apiKey').value = INTERNAL_API_KEY;
+        };
+        
+        // CORS 프록시 서비스들
+        const PROXY_URLS = [
+            'https://api.allorigins.win/get?url=',
+            'https://corsproxy.io/?',
+            'https://cors-anywhere.herokuapp.com/'
+        ];
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('fileName').style.display = 'block';
+            document.getElementById('fileName').textContent = `선택된 파일: ${file.name}`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (excelData.length > 0) {
+                        showAlert('success', `파일을 성공적으로 로드했습니다. (${excelData.length-1}행)`);
+                        // 사업자등록번호 컬럼 확인
+                        const headers = excelData[0];
+                        const hasBusinessColumn = headers.some(header => 
+                            String(header).includes('사업자등록번호')
+                        );
+                        
+                        if (!hasBusinessColumn) {
+                            showAlert('error', '엑셀 파일에 "사업자등록번호" 컬럼이 없습니다.');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    showAlert('error', '파일을 읽는 중 오류가 발생했습니다: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function autoDetectBusinessColumn() {
+            // 사업자등록번호 컬럼명 고정으로 제거
+        }
+        
+        function getInsuranceStatusText(code) {
+            const statusMap = {
+                '1': '계속',
+                '3': '일괄계속',
+                '4': '일괄유기',
+                '7': '사업개시계속'
+            };
+            return statusMap[code] || code;
+        }
+        
+        async function queryBusinessWithProxy(businessNumber, proxyIndex = 0) {
+            if (proxyIndex >= PROXY_URLS.length) {
+                throw new Error('모든 프록시 서버에서 실패했습니다.');
+            }
+            
+            const apiKey = document.getElementById('apiKey').value;
+            const params = new URLSearchParams({
+                serviceKey: apiKey,
+                wkplcInsrncDivCd: '1',
+                bzowrRgstNo: businessNumber
+            });
+            
+            const targetUrl = `${API_BASE_URL}?${params}`;
+            const proxyUrl = PROXY_URLS[proxyIndex] + encodeURIComponent(targetUrl);
+            
+            try {
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                let responseText;
+                if (proxyIndex === 0) { // allorigins
+                    const json = await response.json();
+                    responseText = json.contents;
+                } else {
+                    responseText = await response.text();
+                }
+                
+                // XML 파싱
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+                
+                const resultCode = xmlDoc.querySelector('resultCode');
+                if (resultCode && resultCode.textContent === '00') {
+                    const items = xmlDoc.querySelectorAll('item');
+                    if (items.length > 0) {
+                        const item = items[0];
+                        return {
+                            result: '성공',
+                            company_name: item.querySelector('wkplcNm')?.textContent || '',
+                            insurance_status: getInsuranceStatusText(item.querySelector('empinsrncAplcDivCd')?.textContent || ''),
+                            start_date: item.querySelector('empinsrncAplcDt')?.textContent || '',
+                            end_date: item.querySelector('empinsrncLossDt')?.textContent || ''
+                        };
+                    } else {
+                        return {
+                            result: '데이터 없음',
+                            company_name: '', insurance_status: '', start_date: '', end_date: ''
+                        };
+                    }
+                } else {
+                    return {
+                        result: 'API 오류',
+                        company_name: '', insurance_status: '', start_date: '', end_date: ''
+                    };
+                }
+            } catch (error) {
+                console.log(`프록시 ${proxyIndex + 1} 실패:`, error.message);
+                return await queryBusinessWithProxy(businessNumber, proxyIndex + 1);
+            }
+        }
+        
+        async function startProcessing() {
+            // 입력 검증
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showAlert('error', 'API 키를 입력해주세요.');
+                return;
+            }
+            
+            if (excelData.length === 0) {
+                showAlert('error', '엑셀 파일을 업로드해주세요.');
+                return;
+            }
+            
+            // 컬럼 인덱스 찾기 (사업자등록번호 고정)
+            const headers = excelData[0];
+            const columnIndex = headers.findIndex(header => 
+                String(header).includes('사업자등록번호')
+            );
+            
+            if (columnIndex === -1) {
+                showAlert('error', '엑셀 파일에 "사업자등록번호" 컬럼을 찾을 수 없습니다.');
+                return;
+            }
+            
+            // UI 상태 변경
+            isProcessing = true;
+            shouldStop = false;
+            document.querySelector('.btn-primary').disabled = true;
+            document.querySelector('.btn-secondary').disabled = false;
+            document.querySelector('.progress-section').style.display = 'block';
+            document.querySelector('.results-section').style.display = 'block';
+            
+            // 결과 초기화
+            results = [];
+            const tableBody = document.querySelector('#resultsTable tbody');
+            tableBody.innerHTML = '';
+            
+            const delay = parseFloat(document.getElementById('requestDelay').value) * 1000;
+            const dataRows = excelData.slice(1); // 헤더 제외
+            const totalCount = dataRows.length;
+            
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressCount').textContent = `0/${totalCount}`;
+            
+            for (let i = 0; i < dataRows.length && !shouldStop; i++) {
+                const row = dataRows[i];
+                const businessNumber = String(row[columnIndex] || '').replace(/[-\s]/g, '').trim();
+                
+                if (!businessNumber || businessNumber === 'undefined') {
+                    continue;
+                }
+                
+                document.getElementById('currentStatus').innerHTML = `
+                    <div class="loading"></div> 처리 중: ${businessNumber}
+                `;
+                
+                try {
+                    const result = await queryBusinessWithProxy(businessNumber);
+                    
+                    const resultData = [
+                        i + 1,
+                        businessNumber,
+                        result.company_name,
+                        result.result,
+                        result.insurance_status,
+                        result.start_date,
+                        result.end_date
+                    ];
+                    
+                    results.push(resultData);
+                    addResultToTable(resultData);
+                    
+                } catch (error) {
+                    const errorResult = [
+                        i + 1,
+                        businessNumber,
+                        '',
+                        `네트워크 오류`,
+                        '', '', ''
+                    ];
+                    results.push(errorResult);
+                    addResultToTable(errorResult);
+                }
+                
+                // 진행률 업데이트
+                const progress = ((i + 1) / totalCount) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressCount').textContent = `${i + 1}/${totalCount}`;
+                
+                // 지연
+                if (delay > 0 && i < dataRows.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            
+            // 완료 처리
+            isProcessing = false;
+            document.querySelector('.btn-primary').disabled = false;
+            document.querySelector('.btn-secondary').disabled = true;
+            document.querySelector('button[onclick="downloadResults()"]').disabled = false;
+            
+            if (shouldStop) {
+                document.getElementById('currentStatus').textContent = '⏹️ 처리가 중지되었습니다.';
+                showAlert('error', '처리가 중지되었습니다.');
+            } else {
+                document.getElementById('currentStatus').textContent = '✅ 처리가 완료되었습니다!';
+                showAlert('success', `총 ${results.length}건의 데이터를 처리했습니다.`);
+            }
+        }
+        
+        function stopProcessing() {
+            shouldStop = true;
+            document.querySelector('.btn-secondary').disabled = true;
+        }
+        
+        function addResultToTable(data) {
+            const tableBody = document.querySelector('#resultsTable tbody');
+            const row = tableBody.insertRow();
+            
+            data.forEach((cellData, index) => {
+                const cell = row.insertCell();
+                cell.textContent = cellData;
+                
+                // 결과 컬럼 스타일링
+                if (index === 3) { // 결과 컬럼
+                    if (cellData === '성공') {
+                        cell.className = 'result-success';
+                    } else {
+                        cell.className = 'result-error';
+                    }
+                }
+            });
+            
+            // 테이블 맨 아래로 스크롤
+            row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+        
+        function downloadResults() {
+            if (results.length === 0) {
+                showAlert('error', '다운로드할 결과가 없습니다.');
+                return;
+            }
+            
+            const headers = ['순번', '사업자등록번호', '상호명', '결과', '보험가입구분', '적용일자', '상실일자'];
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...results]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '조회결과');
+            
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+            const filename = `산재보험조회결과_${timestamp}.xlsx`;
+            
+            XLSX.writeFile(wb, filename);
+        }
+        
+        function showAlert(type, message) {
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alert, container.firstChild);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
