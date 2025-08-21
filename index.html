@@ -592,11 +592,12 @@
                     addResultToTable(resultData);
                     
                 } catch (error) {
+                    console.error('API 호출 오류:', error);
                     const errorResult = [
                         i + 1,
                         businessNumber,
                         '',
-                        `네트워크 오류`,
+                        `연결 실패`,
                         '', '', ''
                     ];
                     results.push(errorResult);
