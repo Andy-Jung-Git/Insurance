@@ -398,11 +398,11 @@
             document.getElementById('apiKey').value = INTERNAL_API_KEY;
         };
         
-        // CORS 프록시 서비스들 (안정성을 위해 여러 개 준비)
+        // CORS 우회를 위한 추가 설정
         const PROXY_URLS = [
-            'https://cors-anywhere.herokuapp.com/',
             'https://api.allorigins.win/get?url=',
-            'https://corsproxy.io/?'
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://thingproxy.freeboard.io/fetch/'
         ];
         
         function handleFileSelect(event) {
